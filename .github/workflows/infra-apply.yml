@@ -1,0 +1,103 @@
+name: Infra Apply
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra-apply.yml"
+      - ".github/workflows/infra-plan.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  apply_dev:
+    name: Terraform Apply (dev)
+    runs-on: ubuntu-latest
+    environment: dev
+    defaults:
+      run:
+        working-directory: infra/envs/dev
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_VAR_project_name: ${{ vars.TF_PROJECT_NAME }}
+      TF_VAR_container_image: ${{ vars.CONTAINER_IMAGE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          mask-aws-account-id: true
+
+      - name: Set fallback Terraform vars
+        shell: bash
+        run: |
+          if [ -z "${TF_VAR_project_name}" ]; then
+            echo "TF_VAR_project_name=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_ENV"
+          fi
+          if [ -z "${TF_VAR_container_image}" ]; then
+            echo "TF_VAR_container_image=public.ecr.aws/nginx/nginx:stable" >> "$GITHUB_ENV"
+          fi
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform apply
+        run: terraform apply -input=false -auto-approve -no-color
+
+  apply_prod:
+    name: Terraform Apply (prod)
+    runs-on: ubuntu-latest
+    needs: apply_dev
+    environment: prod
+    defaults:
+      run:
+        working-directory: infra/envs/prod
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_VAR_project_name: ${{ vars.TF_PROJECT_NAME }}
+      TF_VAR_container_image: ${{ vars.CONTAINER_IMAGE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          mask-aws-account-id: true
+
+      - name: Set fallback Terraform vars
+        shell: bash
+        run: |
+          if [ -z "${TF_VAR_project_name}" ]; then
+            echo "TF_VAR_project_name=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_ENV"
+          fi
+          if [ -z "${TF_VAR_container_image}" ]; then
+            echo "TF_VAR_container_image=public.ecr.aws/nginx/nginx:stable" >> "$GITHUB_ENV"
+          fi
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform apply
+        run: terraform apply -input=false -auto-approve -no-color
