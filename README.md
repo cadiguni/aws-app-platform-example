@@ -9,6 +9,7 @@ Padrao adotado:
 - `infra/modules/network`: VPC, subnets publicas/privadas, internet gateway, NAT e rotas.
 - `infra/modules/alb`: Application Load Balancer, listener HTTP, target group e health check.
 - `infra/modules/ecs`: ECS cluster, task definition (Fargate) e service integrado ao ALB.
+- `infra/modules/rds`: PostgreSQL em subnets privadas, SG restrito e senha gerenciada no Secrets Manager.
 - `infra/envs/dev` e `infra/envs/prod`: composicao dos modulos por ambiente.
 
 ## Estrutura
@@ -26,6 +27,10 @@ Padrao adotado:
 │  │  │  ├─ variables.tf
 │  │  │  └─ outputs.tf
 │  │  └─ ecs/
+│  │     ├─ main.tf
+│  │     ├─ variables.tf
+│  │     └─ outputs.tf
+│  │  └─ rds/
 │  │     ├─ main.tf
 │  │     ├─ variables.tf
 │  │     └─ outputs.tf

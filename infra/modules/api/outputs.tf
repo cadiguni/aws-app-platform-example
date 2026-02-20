@@ -1,4 +1,4 @@
-﻿output "api_name" {
+output "api_name" {
   description = "Nome logico da API"
   value       = local.api_name
 }

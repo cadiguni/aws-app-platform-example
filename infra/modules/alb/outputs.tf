@@ -1,4 +1,4 @@
-﻿output "alb_arn" {
+output "alb_arn" {
   description = "ARN do ALB"
   value       = aws_lb.this.arn
 }
