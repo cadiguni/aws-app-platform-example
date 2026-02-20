@@ -52,7 +52,7 @@ jobs:
         working-directory: infra/envs/${{ matrix.environment }}
     env:
       TF_IN_AUTOMATION: "true"
-      TF_VAR_project_name: ${{ vars.TF_PROJECT_NAME }}
+      TF_VAR_project_name: "aws-app-platform"
       TF_VAR_container_image: ${{ vars.CONTAINER_IMAGE }}
     steps:
       - name: Checkout
@@ -66,16 +66,13 @@ jobs:
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
-          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          role-to-assume: arn:aws:iam::229371276586:role/github-actions-aws-app-platform
+          aws-region: us-east-1
           mask-aws-account-id: true
 
       - name: Set fallback Terraform vars
         shell: bash
         run: |
-          if [ -z "${TF_VAR_project_name}" ]; then
-            echo "TF_VAR_project_name=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_ENV"
-          fi
           if [ -z "${TF_VAR_container_image}" ]; then
             echo "TF_VAR_container_image=public.ecr.aws/nginx/nginx:stable" >> "$GITHUB_ENV"
           fi
