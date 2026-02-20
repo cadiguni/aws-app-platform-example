@@ -1,18 +1,15 @@
-﻿# aws-app-platform
+﻿# AWS App Platform Example
 
-🚀 Plataforma padrão para deploy de aplicações em AWS usando Infraestrutura como Código e CI/CD automatizado.
-
-Este projeto demonstra uma arquitetura real de produção para aplicações containerizadas, focada em boas práticas de DevOps, automação e observabilidade.
+Estrutura base de uma API na AWS com Terraform, separando infraestrutura reutilizavel em modulos e composicao por ambiente (`dev` e `prod`).
 
 ## Visao geral
 
-Este repositorio segue o padrao:
+Padrao adotado:
 
-- `infra/modules`: componentes reutilizaveis de infraestrutura.
-- `infra/envs/dev`: composicao e parametros do ambiente de desenvolvimento.
-- `infra/envs/prod`: composicao e parametros do ambiente de producao.
-
-Neste primeiro passo, o modulo `api` esta preparado como base para evoluir com recursos como API Gateway, Lambda, observabilidade e politicas de acesso.
+- `infra/modules/network`: VPC, subnets publicas/privadas, internet gateway, NAT e rotas.
+- `infra/modules/alb`: Application Load Balancer, listener HTTP, target group e health check.
+- `infra/modules/ecs`: ECS cluster, task definition (Fargate) e service integrado ao ALB.
+- `infra/envs/dev` e `infra/envs/prod`: composicao dos modulos por ambiente.
 
 ## Estrutura
 
@@ -20,7 +17,15 @@ Neste primeiro passo, o modulo `api` esta preparado como base para evoluir com r
 .
 ├─ infra/
 │  ├─ modules/
-│  │  └─ api/
+│  │  ├─ network/
+│  │  │  ├─ main.tf
+│  │  │  ├─ variables.tf
+│  │  │  └─ outputs.tf
+│  │  ├─ alb/
+│  │  │  ├─ main.tf
+│  │  │  ├─ variables.tf
+│  │  │  └─ outputs.tf
+│  │  └─ ecs/
 │  │     ├─ main.tf
 │  │     ├─ variables.tf
 │  │     └─ outputs.tf
@@ -42,35 +47,18 @@ Neste primeiro passo, o modulo `api` esta preparado como base para evoluir com r
 
 - Terraform `>= 1.6`
 - Conta AWS ativa
-- AWS CLI `v2` configurado (`aws configure` ou credenciais via perfil/SSO)
-- Permissoes IAM para criar recursos de infraestrutura
+- AWS CLI `v2` configurado (`aws configure` ou perfil/SSO)
+- Permissoes IAM para criar VPC, ALB, ECS, CloudWatch Logs e IAM Roles
 
-## Proximos passos
+## Como usar
 
-1. Copiar `terraform.tfvars.example` para `terraform.tfvars` em cada ambiente.
-2. Ajustar `project_name`, `aws_region` e tags.
-3. Executar `terraform init`, `terraform plan` e `terraform apply` no ambiente desejado.
+1. Escolha o ambiente (`infra/envs/dev` ou `infra/envs/prod`).
+2. Copie `terraform.tfvars.example` para `terraform.tfvars`.
+3. Ajuste `project_name`, `container_image`, `aws_region` e tags.
+4. Execute:
 
-
----
-
-## 🧱 Arquitetura
-
-A plataforma provisiona automaticamente os seguintes recursos:
-
-- VPC com subnets públicas e privadas
-- Application Load Balancer
-- ECS Fargate para execução de containers
-- RDS (PostgreSQL ou MySQL)
-- CloudWatch Logs e Metrics
-- CI/CD com GitHub Actions
-- Infraestrutura como Código com Terraform
-
-### Diagrama (visão simplificada)
-
-```mermaid
-flowchart LR
-    User --> ALB
-    ALB --> ECS[ECS Fargate Service]
-    ECS --> RDS[(RDS Database)]
-    ECS --> CW[CloudWatch Logs]
+```bash
+terraform init
+terraform plan
+terraform apply
+```
