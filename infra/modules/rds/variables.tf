@@ -69,7 +69,7 @@ variable "max_allocated_storage" {
 variable "backup_retention_period" {
   description = "Dias de retencao de backup"
   type        = number
-  default     = 7
+  default     = 0
 }
 
 variable "backup_window" {
