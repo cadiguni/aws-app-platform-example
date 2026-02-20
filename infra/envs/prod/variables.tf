@@ -149,7 +149,7 @@ variable "db_max_allocated_storage" {
 variable "db_backup_retention_period" {
   description = "Dias de retencao de backup do RDS"
   type        = number
-  default     = 7
+  default     = 0
 }
 
 variable "db_backup_window" {

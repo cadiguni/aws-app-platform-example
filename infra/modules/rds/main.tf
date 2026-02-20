@@ -71,7 +71,7 @@ resource "aws_db_instance" "this" {
   db_subnet_group_name                = aws_db_subnet_group.this.name
   vpc_security_group_ids              = [aws_security_group.rds.id]
   backup_retention_period             = var.backup_retention_period
-  backup_window                       = var.backup_window
+  backup_window                       = var.backup_retention_period > 0 ? var.backup_window : null
   maintenance_window                  = var.maintenance_window
   auto_minor_version_upgrade          = true
   allow_major_version_upgrade         = false
