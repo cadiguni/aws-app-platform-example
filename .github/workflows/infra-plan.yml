@@ -1,0 +1,112 @@
+name: Infra Plan
+
+on:
+  pull_request:
+    paths:
+      - "infra/**"
+      - ".github/workflows/infra-plan.yml"
+      - ".github/workflows/infra-apply.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  fmt_validate:
+    name: Terraform Fmt + Validate
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Terraform fmt (check)
+        run: terraform fmt -check -recursive infra
+
+      - name: Terraform validate (dev)
+        run: |
+          terraform -chdir=infra/envs/dev init -backend=false -input=false
+          terraform -chdir=infra/envs/dev validate
+
+      - name: Terraform validate (prod)
+        run: |
+          terraform -chdir=infra/envs/prod init -backend=false -input=false
+          terraform -chdir=infra/envs/prod validate
+
+  plan:
+    name: Terraform Plan (${{ matrix.environment }})
+    runs-on: ubuntu-latest
+    needs: fmt_validate
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.head.repo.fork == false
+    strategy:
+      fail-fast: false
+      matrix:
+        environment: [dev, prod]
+    defaults:
+      run:
+        working-directory: infra/envs/${{ matrix.environment }}
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_VAR_project_name: ${{ vars.TF_PROJECT_NAME }}
+      TF_VAR_container_image: ${{ vars.CONTAINER_IMAGE }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION || 'us-east-1' }}
+          mask-aws-account-id: true
+
+      - name: Set fallback Terraform vars
+        shell: bash
+        run: |
+          if [ -z "${TF_VAR_project_name}" ]; then
+            echo "TF_VAR_project_name=${GITHUB_REPOSITORY#*/}" >> "$GITHUB_ENV"
+          fi
+          if [ -z "${TF_VAR_container_image}" ]; then
+            echo "TF_VAR_container_image=public.ecr.aws/nginx/nginx:stable" >> "$GITHUB_ENV"
+          fi
+
+      - name: Terraform init
+        run: terraform init -input=false
+
+      - name: Terraform plan (output file only)
+        shell: bash
+        run: terraform plan -input=false -no-color -out=tfplan > /tmp/plan-${{ matrix.environment }}.log
+
+      - name: Plan summary
+        shell: bash
+        run: |
+          terraform show -json tfplan > tfplan.json
+          ADD=$(jq '[.resource_changes[]? | select(.change.actions | index("create"))] | length' tfplan.json)
+          CHG=$(jq '[.resource_changes[]? | select(.change.actions | index("update"))] | length' tfplan.json)
+          DEL=$(jq '[.resource_changes[]? | select(.change.actions | index("delete"))] | length' tfplan.json)
+          {
+            echo "### Terraform plan - ${{ matrix.environment }}"
+            echo ""
+            echo "- create: ${ADD}"
+            echo "- update: ${CHG}"
+            echo "- delete: ${DEL}"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload plan artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan-${{ matrix.environment }}
+          path: |
+            infra/envs/${{ matrix.environment }}/tfplan
+            infra/envs/${{ matrix.environment }}/tfplan.json
+          retention-days: 3
