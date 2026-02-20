@@ -1,7 +1,14 @@
-﻿project_name = "aws-app-platform-example"
-aws_region   = "us-east-1"
+﻿project_name            = "aws-app-platform-example"
+aws_region              = "us-east-1"
+container_image         = "public.ecr.aws/nginx/nginx:stable"
+desired_count           = 2
+single_nat_gateway      = false
+
+container_environment = {
+  APP_ENV = "prod"
+}
 
 tags = {
-  owner      = "platform-team"
+  owner       = "platform-team"
   cost_center = "engineering"
 }
