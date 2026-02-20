@@ -1,0 +1,7 @@
+﻿project_name = "aws-app-platform-example"
+aws_region   = "us-east-1"
+
+tags = {
+  owner      = "platform-team"
+  cost_center = "engineering"
+}
