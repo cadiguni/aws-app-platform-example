@@ -68,6 +68,10 @@ terraform plan
 terraform apply
 ```
 
+Guia de bootstrap do backend remoto:
+
+- `docs/terraform-backend-bootstrap.md`
+
 ## Nota de custo (Free Tier)
 
 Para compatibilidade com contas AWS Free Tier, o RDS esta configurado com `backup_retention_period = 0` nos ambientes `dev` e `prod`.

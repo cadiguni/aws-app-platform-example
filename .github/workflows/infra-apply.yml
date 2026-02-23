@@ -50,7 +50,7 @@ jobs:
           fi
 
       - name: Terraform init
-        run: terraform init -input=false
+        run: terraform init -input=false -reconfigure
 
       - name: Terraform apply
         run: terraform apply -input=false -auto-approve -no-color
@@ -91,7 +91,7 @@ jobs:
           fi
 
       - name: Terraform init
-        run: terraform init -input=false
+        run: terraform init -input=false -reconfigure
 
       - name: Terraform apply
         run: terraform apply -input=false -auto-approve -no-color
