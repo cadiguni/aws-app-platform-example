@@ -1,0 +1,62 @@
+name: Infra Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: "Ambiente para destruir"
+        required: true
+        type: choice
+        options:
+          - dev
+          - prod
+      confirm:
+        description: "Digite DESTROY para confirmar"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  destroy:
+    name: Terraform Destroy (${{ inputs.environment }})
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+    defaults:
+      run:
+        working-directory: infra/envs/${{ inputs.environment }}
+    env:
+      TF_IN_AUTOMATION: "true"
+      TF_VAR_project_name: "aws-app-platform"
+      TF_VAR_container_image: "public.ecr.aws/nginx/nginx:stable"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate confirmation
+        shell: bash
+        run: |
+          if [ "${{ inputs.confirm }}" != "DESTROY" ]; then
+            echo "Confirmacao invalida. Digite exatamente DESTROY."
+            exit 1
+          fi
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_wrapper: false
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::229371276586:role/github-actions-aws-app-platform
+          aws-region: us-east-1
+          mask-aws-account-id: true
+
+      - name: Terraform init
+        run: terraform init -input=false -reconfigure
+
+      - name: Terraform destroy
+        run: terraform destroy -input=false -auto-approve -no-color

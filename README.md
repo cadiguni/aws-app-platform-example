@@ -76,7 +76,7 @@ Guia de bootstrap do backend remoto:
 
 - `infra-plan.yml`: valida e gera plan de Terraform em PR.
 - `infra-apply.yml`: aplica infraestrutura em `main`.
-- `app-deploy.yml`: builda imagem de `app/`, publica no ECR e aplica Terraform com a nova `container_image`.
+- `app-deploy.yml`: builda imagem de `app/`, publica no ECR e faz deploy no ECS (nova revisao de task definition + update do service), sem executar Terraform.
 
 ## Nota de custo (Free Tier)
 
