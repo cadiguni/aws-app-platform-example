@@ -78,7 +78,7 @@ jobs:
           fi
 
       - name: Terraform init
-        run: terraform init -input=false
+        run: terraform init -input=false -reconfigure
 
       - name: Terraform plan (output file only)
         shell: bash
